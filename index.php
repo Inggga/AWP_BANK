@@ -1,65 +1,80 @@
 <?php
-require 'person.php';
-$person = new Person($conn);
+include 'DB_config.php';
+include 'bank_account.php';
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    if (isset($_POST['Withdraw'])) {
-        $Account_Name = $_POST['Account_Name'];
-        $Balance = $_POST['Cash'];
-        $response = $person->withdraw($Account_Name, $Balance);
-        echo $response;
-    } elseif (isset($_POST['Deposite'])) {
-        $Account_Name = $_POST['Account_Name'];
-        $Balance = $_POST['Cash'];
-        $response = $person->deposite($Account_Name, $Balance);
-        echo $response;
-    } elseif (isset($_POST['action']) && $_POST['action'] === 'inquire') {
-        
-        $Account_Name = $_POST['Account_Name'];
-        $userDetails = $person->getUserDetails($Account_Name); 
-    }
+  $Account_ID = $_POST['Account_ID'];
+  $action = $_POST['action'];
+  $amount = $_POST['amount'];
+
+  $account = new BankAccount($Account_ID, null, 0, null, null);
+
+  if ($action === "inquire") {
+    $balance = $account->inquire();
+    echo "Current Balance: $balance";
+  } elseif ($action === "deposit") {
+    $result = $account->deposit($amount);
+    echo $result;
+  } elseif ($action === "withdraw") {
+    $result = $account->withdraw($amount);
+    echo $result;
+  }
 }
 
-mysqli_close($conn);
+
+$sql = "SELECT Account_ID, Account_Name, Balance, Account_Type FROM bank_account";
+$result = $conn->query($sql);
+
+if ($result->num_rows > 0) {
+  echo '<h3>Account Information</h3>';
+  echo '<table border="1">';
+  echo '<tr>
+    <th>Account ID</th>
+    <th>Account Name</th>
+    <th>Balance</th>
+    <th>Account Type</th>
+  </tr>';
+
+  while ($row = $result->fetch_assoc()) {
+    echo '<tr>';
+    echo '<td>' . $row['Account_ID'] . '</td>';
+    echo '<td>' . $row['Account_Name'] . '</td>';
+    echo '<td>' . $row['Balance'] . '</td>';
+    echo '<td>' . $row['Account_Type'] . '</td>';
+    echo '</tr>';
+  }
+
+  echo '</table>'; 
+
+}
 ?>
+<!DOCTYPE html>
+<html>
 
-<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BANKING SYSTEM</title>
+  <title>Bank Account Operations</title>
 </head>
+
 <body>
-<form action="" method="POST">
-<h1>TRANSACTION</h1>
-    <label for="Account_Name">Name:</label>
-    <input type="text" id="Account_Name" name="Account_Name" required><br><br>
+  <h2>Bank Account Operations</h2>
+  <form action="index.php" method="post">
+    <label for="Account_ID">Account ID:</label>
+    <input type="text" name="Account_ID" id="Account_ID" required><br>
 
-    <label for="Balance">Cash:</label>
-    <input type="text" id="Balance" name="Cash" required><br><br>
+    <label for="action">Action:</label>
+    <select name="action" id="action">
+      <option value="inquire">Inquire</option>
+      <option value="deposit">Deposit</option>
+      <option value="withdraw">Withdraw</option>
+    </select><br>
 
-    <input type="submit" name="Withdraw" value="Withdraw">
-    <input type="submit" name="Deposite" value="Deposite">
-    <input type="submit" name="Inquire" value="Inquire">
-    <input type="hidden" name="action" value="inquire">
-</form>
+    <label for="amount">Amount:</label>
+    <input type="text" name="amount" id="amount"><br>
 
-<?php if (isset($userDetails)) { ?>
-    <h2>Display Current Balance</h2>
-    <table border="1">
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Balance</th>
-            <th>Account_Type</th>
-        </tr>
-        <tr>
-            <td><?php echo $userDetails['account_ID']; ?></td>
-            <td><?php echo $userDetails['account_name']; ?></td>
-            <td><?php echo $userDetails['balance']; ?></td>
-            <td><?php echo $userDetails['account_type']; ?></td>
-        </tr>
-    </table>
-<?php } ?>
+    <input type="submit" value="Submit">
+  </form>
 </body>
+
+
 </html>
